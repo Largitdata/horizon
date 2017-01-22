@@ -93,6 +93,7 @@ const options_schema = Joi.object({
   make_token_request: Joi.func().arity(2).required(), // take `code` and `return_url`, return request
   make_inspect_request: Joi.func().arity(1).required(), // take `access_token`, return request
   extract_id: Joi.func().arity(1).required(), // take `user_info`, return value
+  extract_email: Joi.func().arity(1).required(), // take `user_info`, return value
 }).unknown(false);
 
 // Attaches an endpoint to the horizon server, providing an oauth2 redirect flow
@@ -105,6 +106,7 @@ const oauth2 = (raw_options) => {
   const make_token_request = options.make_token_request;
   const make_inspect_request = options.make_inspect_request;
   const extract_id = options.extract_id;
+  const extract_email = options.extract_email;
 
   const self_url = (host, path) =>
     url.format({ protocol: 'https', host: host, pathname: path });
@@ -164,6 +166,7 @@ const oauth2 = (raw_options) => {
             run_request(make_inspect_request(access_token), (err2, inner_body) => {
               const user_info = try_json_parse(inner_body);
               const user_id = user_info && extract_id(user_info);
+	      const email = user_info && extract_email(user_info);
 
               if (err2) {
                 logger.error(`Error contacting oauth API: ${err2}`);
@@ -174,7 +177,7 @@ const oauth2 = (raw_options) => {
                 res.statusCode = 500;
                 res.end('unparseable inspect response');
               } else {
-                horizon._auth.generate(provider, user_id).nodeify((err3, jwt) => {
+                horizon._auth.generate(provider, user_id, {email}).nodeify((err3, jwt) => {
                   // Clear the nonce just so we aren't polluting clients' cookies
                   clear_nonce(res, horizon._name);
                   do_redirect(res, err3 ?

@@ -46,6 +46,7 @@ function auth0(horizon, raw_options) {
                     headers: { Authorization: `Bearer ${access_token}` } });
 
   const extract_id = (user_info) => user_info && user_info.user_id;
+  const extract_email = (user_info) => user_info && user_info.email;
 
 
   auth_utils.oauth2({
@@ -55,6 +56,7 @@ function auth0(horizon, raw_options) {
     make_token_request,
     make_inspect_request,
     extract_id,
+    extract_email,
   });
 }
 
